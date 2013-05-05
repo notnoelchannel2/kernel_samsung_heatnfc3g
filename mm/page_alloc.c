@@ -6294,6 +6294,7 @@ static void dump_page_flags(unsigned long flags)
 	printk(KERN_ALERT "page flags: %#lx(", flags);
 
 	/* remove zone id */
+	{1UL << PG_readahead,           "PG_readahead"  },
 	flags &= (1UL << NR_PAGEFLAGS) - 1;
 
 	for (i = 0; i < ARRAY_SIZE(pageflag_names) && flags; i++) {
