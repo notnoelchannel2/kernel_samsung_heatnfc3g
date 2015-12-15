@@ -176,7 +176,6 @@ static int sco_connect(struct sock *sk, __s8 is_wbs)
 
 	if (lmp_esco_capable(hdev) && !disable_esco) {
 		type = ESCO_LINK;
-<<<<<<< HEAD
 	} else if (is_wbs) {
 		return -ENAVAIL;
 	} else {
@@ -189,15 +188,6 @@ static int sco_connect(struct sock *sk, __s8 is_wbs)
 	BT_DBG("type: %d, pkt_type: 0x%x", type, pkt_type);
 	printk("type: %d, pkt_type: 0x%x, is_wbs: %x\n", type, pkt_type, is_wbs);
 
-=======
-	else {
-		type = SCO_LINK;
-		pkt_type &= SCO_ESCO_MASK;
-	}
-
-	hcon = hci_connect(hdev, type, pkt_type, dst, BDADDR_BREDR,
-			   BT_SECURITY_LOW, HCI_AT_NO_BONDING);
->>>>>>> linaro/experimental/android-3.10
 	if (IS_ERR(hcon)) {
 		err = PTR_ERR(hcon);
 		goto done;
@@ -513,11 +503,7 @@ static int sco_sock_connect(struct socket *sock, struct sockaddr *addr, int alen
 {
 	struct sock *sk = sock->sk;
 	struct sockaddr_sco sa;
-<<<<<<< HEAD
 	int len, err = 0;
-=======
-	int len, err;
->>>>>>> linaro/experimental/android-3.10
 
 	BT_DBG("sk %p", sk);
 
