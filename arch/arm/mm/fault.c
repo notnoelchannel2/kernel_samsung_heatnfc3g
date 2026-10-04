@@ -113,9 +113,11 @@ void show_pte(struct mm_struct *mm, unsigned long addr)
 			break;
 		}
 
+#ifdef CONFIG_HIGHMEM
 		/* We must not map this if we have highmem enabled */
 		if (PageHighMem(pfn_to_page(pmd_val(*pmd) >> PAGE_SHIFT)))
 			break;
+#endif
 
 		pte = pte_offset_map(pmd, addr);
 		printk(", *pte=%08llx", (long long)pte_val(*pte));
