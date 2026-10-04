@@ -1202,17 +1202,12 @@ decrypt_pki_encrypted_session_key(struct ecryptfs_auth_tok *auth_tok,
 				  crypt_stat->key_size);
 	}
 out:
-<<<<<<< HEAD
 	if (msg)
 		kfree(msg);
 	if (auth_tok_sig)
         kfree(auth_tok_sig);
 	if (payload)
         kfree(payload);
-=======
-	kfree(msg);
-	kfree(payload);
->>>>>>> 405377144947 (ecryptfs: Fix memory leakage in keystore.c)
 	return rc;
 }
 
