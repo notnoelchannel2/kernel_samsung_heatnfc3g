@@ -44,6 +44,8 @@ struct vm_area_struct;
 struct vfsmount;
 struct cred;
 struct swap_info_struct;
+struct fscrypt_info;
+struct fscrypt_operations;
 struct seq_file;
 
 extern void __init inode_init(void);
@@ -1254,6 +1256,8 @@ struct super_block {
 	void                    *s_security;
 #endif
 	const struct xattr_handler **s_xattr;
+
+	const struct fscrypt_operations *s_cop;	/* fs encryption (f2fs) */
 
 	struct list_head	s_inodes;	/* all inodes */
 	struct hlist_bl_head	s_anon;		/* anonymous dentries for (nfs) exporting */
