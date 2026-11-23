@@ -11,6 +11,7 @@
 #include <mach/appf_types.h>
 #include <mach/appf_internals.h>
 #include <mach/appf_helpers.h>
+#include <linux/wakeup_reason.h>
 #include <linux/sched.h>
 #include <linux/cpuidle.h>
 #include <linux/pm.h>
@@ -500,6 +501,30 @@ int hawaii_force_sleep(suspend_state_t state)
 	}
 }
 
+
+#ifdef CONFIG_SUSPEND
+/*
+ * Report the SPIs pending in the GIC when the system wakes from suspend to
+ * /sys/kernel/wakeup_reasons (Android BatteryStats). GICD_ISPENDRn, n >= 1,
+ * covers interrupts 32 * n .. 32 * n + 31.
+ */
+static void hawaii_log_wakeup_reasons(void)
+{
+	int n, bit;
+
+	for (n = 1; n <= 7; n++) {
+		u32 pend = readl(KONA_GICDIST_VA + GICDIST_PENDING_SET0_OFFSET +
+				 n * 4);
+
+		while (pend) {
+			bit = __ffs(pend);
+			pend &= ~BIT(bit);
+			log_wakeup_reason(n * 32 + bit);
+		}
+	}
+}
+#endif
+
 int enter_idle_state(struct kona_idle_state *state, u32 ctrl_params)
 {
 	struct pi *pi = NULL;
@@ -612,6 +637,10 @@ int enter_idle_state(struct kona_idle_state *state, u32 ctrl_params)
 	}
 #endif
 
+#ifdef CONFIG_SUSPEND
+	if (ctrl_params & CTRL_PARAMS_ENTER_SUSPEND)
+		hawaii_log_wakeup_reasons();
+#endif
 	clear_wakeup_interrupts();
 	pwr_mgr_process_events(LCDTE_EVENT, KEY_R7_EVENT, false);
 	pwr_mgr_process_events(MISC_WKP_EVENT, BRIDGE_TO_MODEM_EVENT, false);
