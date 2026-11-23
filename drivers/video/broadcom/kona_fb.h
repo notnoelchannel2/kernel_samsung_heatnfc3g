@@ -33,6 +33,10 @@ extern unsigned ramdump_enable;
 #if defined(CONFIG_MACH_HAWAII_SS_HEAT3G) || defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G)
 #include "lcd/nt35510_boe.h"
 #include "lcd/ili9806_boe.h"
+#elif defined(CONFIG_MACH_HAWAII_SS_KYLEPRO)
+/* Same include guards as the generic headers: these take precedence */
+#include "lcd/nt35510_kylepro.h"
+#include "lcd/ili9806_kylepro.h"
 #endif
 #ifdef CONFIG_LCD_HX8369_CS02_SUPPORT
 #include "lcd/hx8369_cs02.h"
@@ -100,7 +104,8 @@ defined(CONFIG_LCD_SC7798_CS02_SUPPORT))
 	&s6e63m0x3_cfg,
 #endif
 
-#if defined(CONFIG_MACH_HAWAII_SS_HEAT3G) || defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G)
+#if defined(CONFIG_MACH_HAWAII_SS_HEAT3G) || defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G) \
+	|| defined(CONFIG_MACH_HAWAII_SS_KYLEPRO)
 	&ili9806_cfg,
 	&nt35510_cfg,
 #endif

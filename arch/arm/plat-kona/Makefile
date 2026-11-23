@@ -71,6 +71,16 @@ obj-$(CONFIG_KONA_POWER_MGR) += pwr_mgr.o
 obj-$(CONFIG_KONA_PI_MGR) += pi_mgr.o
 obj-$(CONFIG_KONA_CPU_FREQ_DRV) += kona_cpufreq.o
 obj-$(CONFIG_KONA_ATAG_DT) += atag_dt.o
+obj-$(CONFIG_KONA_BUILTIN_DTB) += builtin_dtb.o
+ifeq ($(CONFIG_KONA_BUILTIN_DTB),y)
+KONA_BUILTIN_DTS := $(srctree)/arch/arm/boot/dts/$(subst ",,$(CONFIG_KONA_BUILTIN_DTB_NAME)).dts
+$(obj)/builtin.dtb: $(KONA_BUILTIN_DTS) FORCE
+	$(call if_changed_dep,dtc)
+$(obj)/builtin_dtb.o: $(obj)/builtin.dtb
+AFLAGS_builtin_dtb.o += -DKONA_DTB_PATH=\"$(obj)/builtin.dtb\"
+targets += builtin.dtb
+clean-files += builtin.dtb
+endif
 obj-$(CONFIG_KONA_USB_CONTROL) += bcm_hsotgctrl.o bcm_hsotgctrl_phy_mdio.o
 obj-$(CONFIG_PROC_PINMUX_DUMP)	+= pindump.o
 obj-$(CONFIG_KONA_DT_BCMPMU)	+= bcmpmu-dt.o

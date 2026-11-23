@@ -1589,6 +1589,27 @@ static int __ref kona_fb_probe(struct platform_device *pdev)
 		fb->is_display_found = 1;
 	}
 
+#ifdef CONFIG_MACH_HAWAII_SS_KYLEPRO
+	/*
+	 * kylepro's bootloader does not pass the panel ID, so detect it at
+	 * probe time like the 3.4 kernel did: read the ID of the panel this
+	 * kona-fb node describes. On the first node a mismatch fails the probe
+	 * so that the next node (the other panel type) gets its turn.
+	 */
+	if (g_lcd_id_num <= 0) {
+		int id = panel_read_id(fb_data->name);
+
+		if (id == g_num_of_fb_probe) {
+			g_lcd_id_num = id;
+		} else if (g_num_of_fb_probe < 2) {
+			konafb_info("panel is not %s, trying next node\n",
+				fb_data->name);
+			ret = -ENODEV;
+			goto err_fbmem_alloc_failed;
+		}
+	}
+#endif
+
 #ifdef CONFIG_FB_BRCM_LCD_EXIST_CHECK
 	if (g_lcd_id_num <=0) {
 		konafb_error("Maybe LCD is NOT connected!\n");

@@ -63,6 +63,14 @@ void check_musb_chip(void)
 		"niconico previously system_rev Revision: %u\n",
 		system_rev);
 
+#if defined(CONFIG_MACH_HAWAII_SS_KYLEPRO)
+	/* kylepro always has an RT8973 MUIC; keep the bootloader's system_rev */
+#ifdef CONFIG_RT8973
+	use_muic_rt8973 = 1;
+#endif
+	return;
+#endif
+
 #if defined(CONFIG_MACH_HAWAII_SS_KYLEVE_REV00)	\
 	|| defined(CONFIG_MACH_HAWAII_SS_JBTLP_REV00)	\
 	|| defined(CONFIG_MACH_HAWAII_SS_KYLEVESS_REV00)	\

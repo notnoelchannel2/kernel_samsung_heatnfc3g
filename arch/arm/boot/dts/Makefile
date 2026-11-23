@@ -219,7 +219,8 @@ dtb-$(CONFIG_ARCH_HAWAII) += hawaii_garnet_edn020.dtb \
 	hawaii_ss_logands_rev01.dtb \
 	hawaii_ss_heat3g_rev00.dtb \
 	hawaii_ss_heat3g_rev01.dtb \
-	hawaii_ss_heatnfc3g_rev00.dtb
+	hawaii_ss_heatnfc3g_rev00.dtb \
+	hawaii_ss_kylepro_rev00.dtb
 dtb-$(CONFIG_ARCH_JAVA) += java_edn000.dtb \
 	java_edn000_4Gb.dtb \
 	java_kivu_xdot0.dtb \

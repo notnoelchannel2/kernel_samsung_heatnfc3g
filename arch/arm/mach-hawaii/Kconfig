@@ -130,6 +130,12 @@ config  MACH_HAWAII_SS_HEATNFC3G_REV00
 	  keyboard, flash, and band selects.
 	  Assumes that MACH_HAWAII_SS_HEATNFC3G is also set. 
 
+config  MACH_HAWAII_SS_KYLEPRO_REV00
+	bool "Support Broadcom Hawaii SS kylepro board"
+	help
+	  Support for the Samsung Galaxy Trend Plus (GT-S7580, kylepro)
+	  board, rev 0.0. Assumes that MACH_HAWAII_SS_KYLEPRO is also set.
+
 config  MACH_HAWAII_SS_CS02_REV00
 	bool "Support Broadcom Hawaii SS cs02 board"
 	help
@@ -360,6 +366,12 @@ config  MACH_HAWAII_SS_HEATNFC3G
 	default n
 	help
 	  Support for the Broadcom Hawaii Samsung Heatnfc3g board.
+
+config  MACH_HAWAII_SS_KYLEPRO
+	bool "Support Broadcom Hawaii Samsung kylepro board"
+	default n
+	help
+	  Support for the Samsung Galaxy Trend Plus (GT-S7580, kylepro).
 
 config  MACH_HAWAII_SS_CS02
 	bool "Support Broadcom Hawaii Samsung CS02 board"

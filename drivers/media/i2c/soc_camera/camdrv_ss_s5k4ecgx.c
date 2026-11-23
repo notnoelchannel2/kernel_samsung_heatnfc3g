@@ -56,7 +56,10 @@ int camdrv_ss_s5k4ecgx_set_preflash_sequence(struct v4l2_subdev *sd, struct v4l2
 static bool first_af_status = false;
 
 
-#ifdef CONFIG_FLASH_MIC2871
+#ifdef CONFIG_FLASH_SKY81290
+static int camdrv_ss_s5k4ecgx_SKY81290_flash_control(struct v4l2_subdev *sd, int control_mode);
+#define camdrv_ss_s5k4ecgx_flash_control(a,b)  camdrv_ss_s5k4ecgx_SKY81290_flash_control(a,b)
+#elif defined(CONFIG_FLASH_MIC2871)
 #define camdrv_ss_s5k4ecgx_flash_control(a,b)  camdrv_ss_s5k4ecgx_MIC2871_flash_control(a,b)
 #else
 #ifdef CONFIG_FLASH_DS8515
@@ -84,7 +87,8 @@ static struct regulator *VCAM_CORE_1_2_V;
 static struct regulator *VCAM_AF_2_8V;
 
 #if defined(CONFIG_MACH_HAWAII_SS_HEAT3G) \
-	|| defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G)
+	|| defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G) \
+	|| defined(CONFIG_MACH_HAWAII_SS_KYLEPRO)
 	
 static struct regulator *VTCAM_IO_1_8_V; //Added for VT camera
 #endif
@@ -144,6 +148,26 @@ static struct regulator *VTCAM_IO_1_8_V; //Added for VT camera
 #define GPIO_CAM_FLASH_SET		34
 #define GPIO_CAM_FLASH_EN		11
 #define EXIF_MODEL			"GT-B7272"
+
+#elif defined(CONFIG_MACH_HAWAII_SS_KYLEPRO)
+
+#define VCAM_A_2_8V_REGULATOR		"mmcldo1"
+#define VCAM_IO_1_8V_REGULATOR		"lvldo1"
+#define VCAM_CORE_1_2V_REGULATOR	"vsrldo"
+#define VCAM_AF_2_8V_REGULATOR		"mmcldo2"
+#define VTCAM_IO_1_8V_REGULATOR		"lvldo2" /* front camera IO */
+#define VCAM_A_2_8V_REGULATOR_uV	2800000
+#define VCAM_IO_1_8V_REGULATOR_uV	1786000
+#define VCAM_CORE_1_2V_REGULATOR_uV	1200000
+#define VCAM_AF_2_8V_REGULATOR_uV	2800000
+#define VTCAM_IO_1_8V_REGULATOR_uV	1786000
+#define CAM0_RESET			111
+#define CAM0_STNBY			2
+#define CAM1_RESET			4
+#define CAM1_STNBY			5
+#define GPIO_CAM_FLASH_SET		34
+#define GPIO_CAM_FLASH_EN		33
+#define EXIF_MODEL			"GT-S7580"
 
 #elif defined(CONFIG_MACH_HAWAII_SS_HEAT3G) \
 	|| defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G)\
@@ -2769,6 +2793,49 @@ static int camdrv_ss_s5k4ecgx_MIC2871_flash_control(struct v4l2_subdev *sd, int 
 }
 
 //lucky#if 0
+#ifdef CONFIG_FLASH_SKY81290
+/*
+ * Skyworks SKY81290 flash/torch driver (kylepro), from the 3.4 kylepro
+ * driver: FLASH_EN high = flash pulse, FLASH_SET high = torch.
+ */
+static DEFINE_SPINLOCK(sky81290_lock);
+
+static int camdrv_ss_s5k4ecgx_SKY81290_flash_control(struct v4l2_subdev *sd, int control_mode)
+{
+	unsigned long flags;
+
+	CAM_INFO_PRINTK("%s %d\n", __func__, control_mode);
+	if (flash_check)
+		return 0;
+
+	switch (control_mode) {
+	case FLASH_CONTROL_MAX_LEVEL:		/* flash */
+		spin_lock_irqsave(&sky81290_lock, flags);
+		gpio_set_value(GPIO_CAM_FLASH_EN, 0);
+		gpio_set_value(GPIO_CAM_FLASH_SET, 0);
+		udelay(1);
+		gpio_set_value(GPIO_CAM_FLASH_EN, 1);
+		spin_unlock_irqrestore(&sky81290_lock, flags);
+		break;
+	case FLASH_CONTROL_HIGH_LEVEL:
+	case FLASH_CONTROL_MIDDLE_LEVEL:	/* AF pre-flash (torch) */
+	case FLASH_CONTROL_LOW_LEVEL:		/* movie torch */
+		spin_lock_irqsave(&sky81290_lock, flags);
+		gpio_set_value(GPIO_CAM_FLASH_EN, 0);
+		gpio_set_value(GPIO_CAM_FLASH_SET, 1);
+		spin_unlock_irqrestore(&sky81290_lock, flags);
+		break;
+	case FLASH_CONTROL_OFF:
+	default:
+		gpio_set_value(GPIO_CAM_FLASH_EN, 0);
+		gpio_set_value(GPIO_CAM_FLASH_SET, 0);
+		udelay(500);
+		break;
+	}
+	return 0;
+}
+#endif /* CONFIG_FLASH_SKY81290 */
+
 static int camdrv_ss_s5k4ecgx_AAT_flash_control(struct v4l2_subdev *sd, int control_mode)
 {
 	CAM_INFO_PRINTK("%s %d :  E\n", __func__, control_mode);
@@ -2894,7 +2961,8 @@ static int camdrv_ss_s5k4ecgx_sensor_power(int on)
 
       
 #if defined(CONFIG_MACH_HAWAII_SS_HEAT3G) \
-	|| defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G)
+	|| defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G) \
+	|| defined(CONFIG_MACH_HAWAII_SS_KYLEPRO)
 	
 	VTCAM_IO_1_8_V  = regulator_get(NULL, VTCAM_IO_1_8V_REGULATOR);
 	if(IS_ERR(VTCAM_IO_1_8_V))
@@ -2949,7 +3017,8 @@ static int camdrv_ss_s5k4ecgx_sensor_power(int on)
 
             //Added Handler for VT camera
            #if defined(CONFIG_MACH_HAWAII_SS_HEAT3G) \
-	                   || defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G)
+	                   || defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G) \
+	                   || defined(CONFIG_MACH_HAWAII_SS_KYLEPRO)
 	
              value = regulator_set_voltage(VTCAM_IO_1_8_V, VTCAM_IO_1_8V_REGULATOR_uV, VTCAM_IO_1_8V_REGULATOR_uV);
 		if (value)
@@ -2995,7 +3064,9 @@ static int camdrv_ss_s5k4ecgx_sensor_power(int on)
 		}
 
              #if defined(CONFIG_MACH_HAWAII_SS_HEAT3G) \
-	                   || defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G)
+	                   || defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G) \
+	                   || defined(CONFIG_MACH_HAWAII_SS_KYLEPRO) \
+	                   || defined(CONFIG_MACH_HAWAII_SS_KYLEPRO)
 	                   
 		value = regulator_enable(VTCAM_IO_1_8_V);
 		if (value) {

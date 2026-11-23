@@ -76,7 +76,8 @@ static int USB_MDIO[6] = {
 	0x0000,			/* MDIO Register 2 initial value 0x0000 */
 #if defined(CONFIG_MACH_HAWAII_GARNET)
 	0x0400,			/* MDIO Register 3 initial value 0x0400 */
-#elif defined(CONFIG_MACH_HAWAII_SS_HEAT3G) || defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G)
+#elif defined(CONFIG_MACH_HAWAII_SS_HEAT3G) || defined(CONFIG_MACH_HAWAII_SS_HEATNFC3G) \
+	|| defined(CONFIG_MACH_HAWAII_SS_KYLEPRO)
 	0x2600,			/* MDIO Register 3 initial value 0x2600 */
 #else
 	0x0000,			/* MDIO Register 3 initial value 0x0000 */

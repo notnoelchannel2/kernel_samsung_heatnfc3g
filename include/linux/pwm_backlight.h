@@ -28,6 +28,7 @@ struct platform_pwm_backlight_data {
 #endif
 	int bl_delay_on;
 	const char *pwm_request_label;
+	const char *bl_name;	/* backlight class name; default dev_name() */
 	int (*init)(struct device *dev);
 	int (*notify)(struct device *dev, int brightness);
 	void (*notify_after)(struct device *dev, int brightness);

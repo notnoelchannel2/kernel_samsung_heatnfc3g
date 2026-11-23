@@ -134,6 +134,7 @@ static struct backlight_ops bcm_touchkey_led_ops = {
 };
 
 
+#ifndef CONFIG_HAS_EARLYSUSPEND
 static int touchkeyled_suspend(struct platform_device *pdev,
 					pm_message_t state)
 {
@@ -150,7 +151,20 @@ static int touchkeyled_resume(struct platform_device *pdev)
 	touchkeyled_power_ctrl(TOUCHKEYLED_ON);
 	return 0;
 }
+#endif
 
+
+#ifdef CONFIG_HAS_EARLYSUSPEND
+static void touchkeyled_early_suspend(struct early_suspend *h)
+{
+	touchkeyled_power_ctrl(TOUCHKEYLED_OFF);
+}
+
+static void touchkeyled_late_resume(struct early_suspend *h)
+{
+	touchkeyled_power_ctrl(TOUCHKEYLED_ON);
+}
+#endif
 
 static int touchkeyled_probe(struct platform_device *pdev)
 {
@@ -186,8 +200,8 @@ static int touchkeyled_probe(struct platform_device *pdev)
 	touchkeyled->pdev = pdev;
 	touchkeyled->early_suspend_desc.level =
 		EARLY_SUSPEND_LEVEL_BLANK_SCREEN;
-	touchkeyled->early_suspend_desc.suspend = touchkeyled_suspend;
-	touchkeyled->early_suspend_desc.resume = touchkeyled_resume;
+	touchkeyled->early_suspend_desc.suspend = touchkeyled_early_suspend;
+	touchkeyled->early_suspend_desc.resume = touchkeyled_late_resume;
 	register_early_suspend(&touchkeyled->early_suspend_desc);
 #endif
 
@@ -222,12 +236,10 @@ static int touchkeyled_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static int touchkeyled_shutdown(struct platform_device *pdev)
+static void touchkeyled_shutdown(struct platform_device *pdev)
 {
 	KLDBG("[KEYLED] touchkeyled_shutdown\n");
 	touchkeyled_power_ctrl(TOUCHKEYLED_OFF);
-
-	return 0;
 }
 
 static struct platform_driver touchkeyled_driver = {

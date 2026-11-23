@@ -320,6 +320,22 @@ config KONA_ATAG_DT_DTS_FILE
        help
          DeviceTree source file name
 
+config KONA_BUILTIN_DTB
+	bool "Link a board device tree into the kernel for ATAG boot"
+	depends on KONA_ATAG_DT
+	default n
+	help
+	  Bootloaders on older Hawaii boards (e.g. Samsung kylepro) pass
+	  ATAGs only. The 3.10 board code needs a flattened device tree for
+	  UART, I2C, SDHCI, ION and the framebuffer. With this option the DTS
+	  named by KONA_BUILTIN_DTB_NAME is compiled and linked into the
+	  kernel; it is used when the bootloader does not pass a DTB, while
+	  memory, command line and the pinmux blob still come from ATAGs.
+
+config KONA_BUILTIN_DTB_NAME
+	string "Built-in DTS file name (without .dts)"
+	depends on KONA_BUILTIN_DTB
+
 config PROC_PINMUX_DUMP
        bool "Enable Pin-mux Dump"
        help

@@ -756,14 +756,32 @@ void __init hyp_mode_check(void)
 #endif
 }
 
+#ifdef CONFIG_KONA_BUILTIN_DTB
+extern struct boot_param_header __kona_builtin_dtb_begin;
+#endif
+
 void __init setup_arch(char **cmdline_p)
 {
 	struct machine_desc *mdesc;
 
 	setup_processor();
 	mdesc = setup_machine_fdt(__atags_pointer);
-	if (!mdesc)
+	if (!mdesc) {
 		mdesc = setup_machine_tags(__atags_pointer, __machine_arch_type);
+#ifdef CONFIG_KONA_BUILTIN_DTB
+		/*
+		 * ATAG boot (no DTB from the bootloader): memory, cmdline and
+		 * the Kona pinmux blob came from ATAGs above. Use the device
+		 * tree linked into the kernel for everything else. This must
+		 * happen before arm_memblock_init() so .reserve can scan it.
+		 */
+		if (be32_to_cpu(__kona_builtin_dtb_begin.magic) == OF_DT_HEADER) {
+			initial_boot_params = &__kona_builtin_dtb_begin;
+			pr_info("Using built-in device tree (%u bytes)\n",
+				be32_to_cpu(__kona_builtin_dtb_begin.totalsize));
+		}
+#endif
+	}
 	machine_desc = mdesc;
 	machine_name = mdesc->name;
 

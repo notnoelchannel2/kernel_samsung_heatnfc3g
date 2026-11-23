@@ -8,3 +8,4 @@ obj-$(CONFIG_LCD_SC7798_I9060_SUPPORT) += sc7798_dsi.o
 obj-$(CONFIG_LCD_HX8369_BOE_PANEL_SUPPORT) += hx8369_dsi.o
 obj-$(CONFIG_MACH_HAWAII_SS_HEAT3G) += heat_dsi.o
 obj-$(CONFIG_MACH_HAWAII_SS_HEATNFC3G) += heatnfc_dsi.o
+obj-$(CONFIG_MACH_HAWAII_SS_KYLEPRO) += kylepro_dsi.o

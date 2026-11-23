@@ -49,7 +49,12 @@
 #include <plat/cpu.h>
 #include "i2c-bsc.h"
 
+#ifdef CONFIG_SEC_NFC_I2C_SB
 #include <linux/nfc/sec_nfc_sb.h>
+#else
+/* NFC debug hook; boards without the Samsung NFC chip (e.g. kylepro) */
+static inline int sec_nfc_get_state(void) { return 0; }
+#endif
 
 #define DEFAULT_I2C_BUS_SPEED    BSC_BUS_SPEED_50K
 #define CMDBUSY_DELAY            100

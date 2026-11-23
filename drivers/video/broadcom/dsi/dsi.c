@@ -53,6 +53,10 @@
 #ifdef CONFIG_MACH_HAWAII_SS_HEAT3G
 void backlight_control(int brigtness);
 #endif
+#ifdef CONFIG_MACH_HAWAII_SS_KYLEPRO
+extern int backlight_check;
+extern int kylepro_esd_reset_get(void);
+#endif
 
 typedef struct {
 	CSL_LCD_HANDLE clientH;
@@ -954,6 +958,13 @@ Int32 DSI_PowerControl(
 			}
 			#endif
 			usleep_range(1000, 1010);
+#ifdef CONFIG_MACH_HAWAII_SS_KYLEPRO
+			/* kylepro ILI9806: extra reset when recovering from ESD */
+			if (backlight_check == 1 && kylepro_esd_reset_get() == 1) {
+				hw_reset(drvH, FALSE);
+				msleep(70);
+			}
+#endif
 			if (info->init_fn)
 				info->init_fn();
 			DSI_ExecCmndList(pPanel, info->init_seq);

@@ -119,6 +119,14 @@ config VIDEO_AS3643
 	  This is a driver for the AS3643 flash controller. It has
 	  built in control for flash and torch modes.
 
+config FLASH_SKY81290
+	bool "Skyworks SKY81290 camera flash (s5k4ecgx)"
+	depends on SOC_CAMERA_MAIN_S5K4ECGX
+	default n
+	help
+	  GPIO-controlled SKY81290 flash/torch driver used with the
+	  s5k4ecgx main camera on the Samsung kylepro.
+
 config SOC_CAMERA_MAIN_S5K4ECGX
 	tristate "s5k4ecgx main camera support"
 	depends on SOC_CAMERA && I2C

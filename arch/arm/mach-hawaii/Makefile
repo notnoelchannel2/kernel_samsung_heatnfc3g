@@ -24,6 +24,7 @@ obj-$(CONFIG_MACH_HAWAII_SS_LOGAN_REV02) += hawaii.o board-hawaii_ss_logan.o haw
 obj-$(CONFIG_MACH_HAWAII_SS_LOGANDS) += hawaii.o board-hawaii_ss_logands.o hawaii_wifi.o board-bcm59xxx-ss-logands.o dev-hawaii_ss_muic.o
 obj-$(CONFIG_MACH_HAWAII_SS_HEAT3G) += hawaii.o board-hawaii_ss_heat3g.o hawaii_wifi.o board-bcm59xxx-ss-heat3g.o dev-hawaii_ss_muic.o
 obj-$(CONFIG_MACH_HAWAII_SS_HEATNFC3G) += hawaii.o board-hawaii_ss_heatnfc3g.o hawaii_wifi.o board-bcm59xxx-ss-heatnfc3g.o dev-hawaii_ss_muic.o
+obj-$(CONFIG_MACH_HAWAII_SS_KYLEPRO) += hawaii.o board-hawaii_ss_kylepro.o hawaii_wifi.o board-bcm59xxx-ss-kylepro.o dev-hawaii_ss_muic.o
 obj-$(CONFIG_MACH_HAWAII_SS_CS02_REV00) += hawaii.o board-hawaii_ss_cs02.o hawaii_ss_cs02_wifi.o board-bcm59xxx-ss-cs02.o
 obj-$(CONFIG_MACH_HAWAII_SS_LOGANDS_REV00_POWER) += hawaii.o board-hawaii_ss_logands.o hawaii_ss_logands_wifi.o board-bcm59xxx-ss-logands.o
 obj-$(CONFIG_MACH_HAWAII_SS_LOGANDS_COMBINED) += hawaii.o board-hawaii_ss_logands.o hawaii_ss_logands_wifi.o board-bcm59xxx-ss-logands.o
@@ -90,6 +91,12 @@ ifeq ($(CONFIG_MACH_HAWAII_SS_HEATNFC3G), y)
 obj-$(CONFIG_RT8973) += dev-muic_rt8973.o
 obj-$(CONFIG_MACH_HAWAII_SS_HEATNFC3G) += dev-hawaii_heat3g_bt.o dev-hawaii_heat3g_camera.o dev-hawaii_heat3g_tsp.o dev-hawaii_heat3g_nfc.o dev-hawaii_sensor.o
 obj-$(CONFIG_USB_SWITCH_TSU6111) += dev-muic_tsu6111.o
+obj-y += ss_musb_info.o
+endif
+
+ifeq ($(CONFIG_MACH_HAWAII_SS_KYLEPRO), y)
+obj-$(CONFIG_RT8973) += dev-muic_rt8973.o
+obj-$(CONFIG_MACH_HAWAII_SS_KYLEPRO) += dev-hawaii_heat3g_bt.o dev-hawaii_kylepro_camera.o dev-hawaii_heat3g_tsp.o dev-hawaii_kylepro_sensor.o
 obj-y += ss_musb_info.o
 endif
 
