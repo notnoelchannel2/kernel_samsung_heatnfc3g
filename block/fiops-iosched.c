@@ -467,11 +467,11 @@ static void fiops_init_prio_data(struct fiops_ioc *cic)
 		cic->wl_type = fiops_wl_type(task_nice_ioclass(tsk));
 		break;
 	case IOPRIO_CLASS_RT:
-		cic->ioprio = task_ioprio(ioc);
+		cic->ioprio = IOPRIO_PRIO_DATA(ioc->ioprio);
 		cic->wl_type = fiops_wl_type(IOPRIO_CLASS_RT);
 		break;
 	case IOPRIO_CLASS_BE:
-		cic->ioprio = task_ioprio(ioc);
+		cic->ioprio = IOPRIO_PRIO_DATA(ioc->ioprio);
 		cic->wl_type = fiops_wl_type(IOPRIO_CLASS_BE);
 		break;
 	case IOPRIO_CLASS_IDLE:
@@ -614,7 +614,7 @@ static void fiops_kick_queue(struct work_struct *work)
 	spin_unlock_irq(q->queue_lock);
 }
 
-static void *fiops_init_queue(struct request_queue *q)
+static void *fiops_init_queue_data(struct request_queue *q)
 {
 	struct fiops_data *fiopsd;
 	int i;
@@ -636,6 +636,29 @@ static void *fiops_init_queue(struct request_queue *q)
 	fiopsd->async_scale = VIOS_ASYNC_SCALE;
 
 	return fiopsd;
+}
+
+/* 3.10 elevator_init_fn: allocate the elevator_queue and install it */
+static int fiops_init_queue(struct request_queue *q, struct elevator_type *e)
+{
+	struct elevator_queue *eq;
+	void *data;
+
+	eq = elevator_alloc(q, e);
+	if (!eq)
+		return -ENOMEM;
+
+	data = fiops_init_queue_data(q);
+	if (!data) {
+		kobject_put(&eq->kobj);
+		return -ENOMEM;
+	}
+	eq->elevator_data = data;
+
+	spin_lock_irq(q->queue_lock);
+	q->elevator = eq;
+	spin_unlock_irq(q->queue_lock);
+	return 0;
 }
 
 static void fiops_init_icq(struct io_cq *icq)

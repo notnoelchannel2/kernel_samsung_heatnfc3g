@@ -629,9 +629,9 @@ static inline void bfq_reset_burst_list(struct bfq_data *bfqd,
 					struct bfq_queue *bfqq)
 {
 	struct bfq_queue *item;
-	struct hlist_node *pos, *n;
+	struct hlist_node *n;
 
-	hlist_for_each_entry_safe(item, pos, n,
+	hlist_for_each_entry_safe(item, n,
 				  &bfqd->burst_list, burst_list_node)
 		hlist_del_init(&item->burst_list_node);
 	hlist_add_head(&bfqq->burst_list_node, &bfqd->burst_list);
@@ -646,7 +646,7 @@ static void bfq_add_to_burst(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 
 	if (bfqd->burst_size == bfqd->bfq_large_burst_thresh) {
 		struct bfq_queue *pos, *bfqq_item;
-		struct hlist_node *p, *n;
+		struct hlist_node *n;
 
 		/*
 		 * Enough queues have been activated shortly after each
@@ -658,7 +658,7 @@ static void bfq_add_to_burst(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 		 * We can now mark all queues in the burst list as
 		 * belonging to a large burst.
 		 */
-		hlist_for_each_entry(bfqq_item, n, &bfqd->burst_list,
+		hlist_for_each_entry(bfqq_item, &bfqd->burst_list,
 				     burst_list_node)
 		        bfq_mark_bfqq_in_large_burst(bfqq_item);
 		bfq_mark_bfqq_in_large_burst(bfqq);
@@ -670,7 +670,7 @@ static void bfq_add_to_burst(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 		 * belonging to a large burst. So the burst list is not
 		 * needed any more. Remove it.
 		 */
-		hlist_for_each_entry_safe(pos, p, n, &bfqd->burst_list,
+		hlist_for_each_entry_safe(pos, n, &bfqd->burst_list,
 					  burst_list_node)
 			hlist_del_init(&pos->burst_list_node);
 	} else /* burst not yet large: add bfqq to the burst list */
@@ -2959,11 +2959,11 @@ static void bfq_set_next_ioprio_data(struct bfq_queue *bfqq, struct bfq_io_cq *b
 		bfqq->entity.new_ioprio_class = task_nice_ioclass(tsk);
 		break;
 	case IOPRIO_CLASS_RT:
-		bfqq->entity.new_ioprio = task_ioprio(ioc);
+		bfqq->entity.new_ioprio = IOPRIO_PRIO_DATA(ioc->ioprio);
 		bfqq->entity.new_ioprio_class = IOPRIO_CLASS_RT;
 		break;
 	case IOPRIO_CLASS_BE:
-		bfqq->entity.new_ioprio = task_ioprio(ioc);
+		bfqq->entity.new_ioprio = IOPRIO_PRIO_DATA(ioc->ioprio);
 		bfqq->entity.new_ioprio_class = IOPRIO_CLASS_BE;
 		break;
 	case IOPRIO_CLASS_IDLE:
@@ -3129,8 +3129,8 @@ static struct bfq_queue *bfq_get_queue(struct bfq_data *bfqd,
 				       struct bfq_group *bfqg, int is_sync,
 				       struct io_context *ioc, gfp_t gfp_mask)
 {
-	const int ioprio = task_ioprio(ioc);
-	const int ioprio_class = task_ioprio_class(ioc);
+	const int ioprio = IOPRIO_PRIO_DATA(ioc->ioprio);
+	const int ioprio_class = IOPRIO_PRIO_CLASS(ioc->ioprio);
 	struct bfq_queue **async_bfqq = NULL;
 	struct bfq_queue *bfqq = NULL;
 
@@ -3563,7 +3563,7 @@ bfq_split_bfqq(struct bfq_io_cq *bic, struct bfq_queue *bfqq)
  * Allocate bfq data structures associated with this request.
  */
 static int bfq_set_request(struct request_queue *q, struct request *rq,
-			   gfp_t gfp_mask)
+			   struct bio *bio, gfp_t gfp_mask)
 {
 	struct bfq_data *bfqd = q->elevator->elevator_data;
 	struct bfq_io_cq *bic = icq_to_bic(rq->elv.icq);
@@ -3574,8 +3574,11 @@ static int bfq_set_request(struct request_queue *q, struct request *rq,
 	unsigned long flags;
 	bool split = false;
 
-	/* handle changed prio notifications; cgroup change is handled separately */
-	if (unlikely(icq_get_changed(&bic->icq) & ICQ_IOPRIO_CHANGED))
+	/*
+	 * handle changed prio (3.10: no ICQ_IOPRIO_CHANGED; compare with the
+	 * io_context like cfq); cgroup change is handled separately
+	 */
+	if (bic && unlikely(bic->ioprio != bic->icq.ioc->ioprio))
 		bfq_check_ioprio_change(bic->icq.ioc, bic);
 
 	might_sleep_if(gfp_mask & __GFP_WAIT);
@@ -3781,7 +3784,7 @@ static void bfq_exit_queue(struct elevator_queue *e)
 	kfree(bfqd);
 }
 
-static void *bfq_init_queue(struct request_queue *q)
+static void *bfq_init_queue_data(struct request_queue *q)
 {
 	struct bfq_group *bfqg;
 	struct bfq_data *bfqd;
@@ -3884,6 +3887,29 @@ static void *bfq_init_queue(struct request_queue *q)
 	bfqd->device_speed = BFQ_BFQD_FAST;
 
 	return bfqd;
+}
+
+/* 3.10 elevator_init_fn: allocate the elevator_queue and install it */
+static int bfq_init_queue(struct request_queue *q, struct elevator_type *e)
+{
+	struct elevator_queue *eq;
+	void *data;
+
+	eq = elevator_alloc(q, e);
+	if (!eq)
+		return -ENOMEM;
+
+	data = bfq_init_queue_data(q);
+	if (!data) {
+		kobject_put(&eq->kobj);
+		return -ENOMEM;
+	}
+	eq->elevator_data = data;
+
+	spin_lock_irq(q->queue_lock);
+	q->elevator = eq;
+	spin_unlock_irq(q->queue_lock);
+	return 0;
 }
 
 static void bfq_slab_kill(void)

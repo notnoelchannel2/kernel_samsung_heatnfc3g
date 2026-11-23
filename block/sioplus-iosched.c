@@ -264,7 +264,7 @@ sioplus_latter_request(struct request_queue *q, struct request *rq)
 }
 
 static void *
-sioplus_init_queue(struct request_queue *q)
+sioplus_init_queue_data(struct request_queue *q)
 {
 	struct sioplus_data *sd;
 
@@ -292,6 +292,29 @@ sioplus_init_queue(struct request_queue *q)
 	sd->async_reads_starved = async_reads_starved;
 
 	return sd;
+}
+
+/* 3.10 elevator_init_fn: allocate the elevator_queue and install it */
+static int sioplus_init_queue(struct request_queue *q, struct elevator_type *e)
+{
+	struct elevator_queue *eq;
+	void *data;
+
+	eq = elevator_alloc(q, e);
+	if (!eq)
+		return -ENOMEM;
+
+	data = sioplus_init_queue_data(q);
+	if (!data) {
+		kobject_put(&eq->kobj);
+		return -ENOMEM;
+	}
+	eq->elevator_data = data;
+
+	spin_lock_irq(q->queue_lock);
+	q->elevator = eq;
+	spin_unlock_irq(q->queue_lock);
+	return 0;
 }
 
 static void

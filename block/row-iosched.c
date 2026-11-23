@@ -782,7 +782,7 @@ done:
  * this dispatch queue
  *
  */
-static void *row_init_queue(struct request_queue *q)
+static void *row_init_queue_data(struct request_queue *q)
 {
 
 	struct row_data *rdata;
@@ -825,6 +825,29 @@ static void *row_init_queue(struct request_queue *q)
 	rdata->dispatch_queue = q;
 
 	return rdata;
+}
+
+/* 3.10 elevator_init_fn: allocate the elevator_queue and install it */
+static int row_init_queue(struct request_queue *q, struct elevator_type *e)
+{
+	struct elevator_queue *eq;
+	void *data;
+
+	eq = elevator_alloc(q, e);
+	if (!eq)
+		return -ENOMEM;
+
+	data = row_init_queue_data(q);
+	if (!data) {
+		kobject_put(&eq->kobj);
+		return -ENOMEM;
+	}
+	eq->elevator_data = data;
+
+	spin_lock_irq(q->queue_lock);
+	q->elevator = eq;
+	spin_unlock_irq(q->queue_lock);
+	return 0;
 }
 
 /*
@@ -930,7 +953,8 @@ static enum row_queue_prio row_get_queue_prio(struct request *rq,
  *
  */
 static int
-row_set_request(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
+row_set_request(struct request_queue *q, struct request *rq,
+		struct bio *bio, gfp_t gfp_mask)
 {
 	struct row_data *rd = (struct row_data *)q->elevator->elevator_data;
 	unsigned long flags;
